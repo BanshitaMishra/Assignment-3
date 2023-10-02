@@ -1,0 +1,64 @@
+import requests
+from bs4 import BeautifulSoup
+
+# Function to fetch and parse the main page with disease names and details URLs
+def get_disease_list(url):
+    response = requests.get(url)
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.text, "html.parser")
+        disease_links = []
+        for link in soup.find_all("a", class_="disease-link"):
+            disease_name = link.text.strip()
+            disease_url = link["href"]
+            disease_links.append((disease_name, disease_url))
+        return disease_links
+    else:
+        print(f"Failed to fetch data. Status code: {response.status_code}")
+        return []
+
+# Function to scrape disease details from a specific disease page
+def scrape_disease_details(disease_name, disease_url):
+    response = requests.get(disease_url)
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.text, "html.parser")
+        disease_details = {
+            "Disease Name": disease_name,
+            "Overview": soup.find("div", class_="overview").text.strip(),
+            "Key Facts": soup.find("div", class_="key-facts").text.strip(),
+            "Symptoms": soup.find("div", class_="symptoms").text.strip(),
+            "Causes": soup.find("div", class_="causes").text.strip(),
+            "Types": soup.find("div", class_="types").text.strip(),
+            "Risk factors": soup.find("div", class_="risk-factors").text.strip(),
+            "Diagnosis": soup.find("div", class_="diagnosis").text.strip(),
+            "Prevention": soup.find("div", class_="prevention").text.strip(),
+            "Specialist to visit": soup.find("div", class_="specialist").text.strip(),
+            "Treatment": soup.find("div", class_="treatment").text.strip(),
+            "Home-care": soup.find("div", class_="home-care").text.strip(),
+            "Alternatives therapies": soup.find("div", class_="alternatives").text.strip(),
+            "Living with": soup.find("div", class_="living-with").text.strip(),
+            # Extract FAQs (if available)
+            "FAQs": [q.text.strip() for q in soup.find_all("div", class_="faq-question")],
+            # Extract references (if available)
+            "References": [a["href"] for a in soup.find_all("a", class_="reference-link")],
+        }
+        return disease_details
+    else:
+        print(f"Failed to fetch data for {disease_name}. Status code: {response.status_code}")
+        return None
+
+# Main function
+if _name_ == "_main_":
+    base_url = "https://www.1mg.com/all-diseases"  # Replace with the actual URL
+    disease_list = get_disease_list(base_url)
+    
+    scraped_data = []
+    
+    for disease_name, disease_url in disease_list:
+        disease_details = scrape_disease_details(disease_name, disease_url)
+        if disease_details:
+            scraped_data.append(disease_details)
+    
+    # You can save the scraped data to a file or process it further as needed
+    # For example, you can save it to a CSV file using the csv library.
+
+    print(f"Scraped {len(scraped_data)} diseases.")
